@@ -141,10 +141,17 @@ if selected_year is not None and selected_make is not None and selected_version 
                 mime="application/pdf"
             )
             
-            # Show PDF in main area using base64 encoding
+            # Show PDF in main area using components.v1.html
             base64_pdf = base64.b64encode(st.session_state.pdf_bytes).decode('utf-8')
-            pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="800" type="application/pdf"></iframe>'
-            st.markdown(pdf_display, unsafe_allow_html=True)
+            pdf_html = f"""
+                <iframe
+                    src="data:application/pdf;base64,{base64_pdf}"
+                    width="100%"
+                    height="800"
+                    style="border: none;"
+                ></iframe>
+            """
+            st.components.v1.html(pdf_html, height=800)
         else:
             st.error("Could not load PDF. Please try opening in a new tab.")
             
