@@ -4,6 +4,8 @@ import requests
 from io import BytesIO
 import base64
 from datetime import datetime
+from streamlit_pdf_viewer import pdf_viewer
+import re
 
 # Set page configuration
 st.set_page_config(
@@ -16,16 +18,44 @@ def get_year_range():
     current_year = datetime.now().year
     return list(range(current_year, 1949, -1))  # From current year down to 1950
 
-# Function to fetch data from NHTSA API
+# Function to clean string for filename
+def clean_filename(text):
+    # Remove special characters and replace spaces with underscores
+    cleaned = re.sub(r'[^a-zA-Z0-9\s-]', '', text)
+    cleaned = cleaned.replace(' ', '_')
+    return cleaned
+
+# Function to fetch data from NHTSA API with pagination
 @st.cache_data
 def fetch_nhtsa_data(year):
-    url = f"https://vpic.nhtsa.dot.gov/api/vehicles/GetParts?type=565&fromDate=1/1/{year}&toDate=12/31/{year}&format=csv&page=1"
-    try:
-        df = pd.read_csv(url)
-        return df
-    except Exception as e:
-        st.error(f"Error fetching data: {str(e)}")
-        return pd.DataFrame()
+    all_data = pd.DataFrame()
+    page = 1
+    
+    while True:
+        url = f"https://vpic.nhtsa.dot.gov/api/vehicles/GetParts?type=565&fromDate=1/1/{year}&toDate=12/31/{year}&format=csv&page={page}"
+        try:
+            df = pd.read_csv(url)
+            
+            # If we get an empty dataframe, we've reached the end
+            if df.empty:
+                break
+                
+            # Concatenate the new data
+            all_data = pd.concat([all_data, df], ignore_index=True)
+            
+            # Move to next page
+            page += 1
+            
+        except Exception as e:
+            st.error(f"Error fetching data for page {page}: {str(e)}")
+            break
+    
+    if all_data.empty:
+        st.warning(f"No data found for year {year}")
+    else:
+        st.success(f"Found {len(all_data)} records across {page-1} pages")
+    
+    return all_data
 
 # Sidebar filters
 st.sidebar.title("Filter Options")
@@ -134,24 +164,27 @@ if selected_year is not None and selected_make is not None and selected_version 
         
         # Download button (only if we have the PDF)
         if st.session_state.pdf_bytes is not None:
+            # Create a clean filename
+            clean_version = clean_filename(version_name)
+            clean_make = clean_filename(selected_make)
+            filename = f"{selected_year}_{clean_make}_{clean_version}.pdf"
+            
             st.sidebar.download_button(
                 label="Download PDF",
                 data=st.session_state.pdf_bytes,
-                file_name=f"{selected_year}_{selected_make}_{version_name}.pdf",
+                file_name=filename,
                 mime="application/pdf"
             )
             
-            # Show PDF in main area using components.v1.html
-            base64_pdf = base64.b64encode(st.session_state.pdf_bytes).decode('utf-8')
-            pdf_html = f"""
-                <iframe
-                    src="data:application/pdf;base64,{base64_pdf}"
-                    width="100%"
-                    height="800"
-                    style="border: none;"
-                ></iframe>
-            """
-            st.components.v1.html(pdf_html, height=800)
+            # Show PDF using streamlit-pdf-viewer
+            # Using 90% width to ensure proper rendering and some margin
+            # Height is set to 800px for good visibility
+            pdf_viewer(
+                st.session_state.pdf_bytes,
+                width="90%",
+                height=800,
+                pages_vertical_spacing=2
+            )
         else:
             st.error("Could not load PDF. Please try opening in a new tab.")
             

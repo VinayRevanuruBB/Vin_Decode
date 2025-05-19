@@ -2,3 +2,8 @@
 /sample_vehicle_data.csv
 /test.ipynb
 /vin_info.csv
+.databricks
+.vscode
+/typings
+databricks.yml
+
