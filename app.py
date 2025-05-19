@@ -4,18 +4,13 @@ import requests
 from io import BytesIO
 import base64
 from datetime import datetime
+from streamlit_pdf_viewer import pdf_viewer
 
 # Set page configuration
 st.set_page_config(
     page_title="Vehicle Documentation Viewer",
     layout="wide"
 )
-
-# Function to display PDF
-def show_pdf(pdf_bytes):
-    base64_pdf = base64.b64encode(pdf_bytes).decode('utf-8')
-    pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="800" type="application/pdf"></iframe>'
-    st.markdown(pdf_display, unsafe_allow_html=True)
 
 # Function to get year range
 def get_year_range():
@@ -147,8 +142,8 @@ if selected_year is not None and selected_make is not None and selected_version 
                 mime="application/pdf"
             )
             
-            # Show PDF in main area
-            show_pdf(st.session_state.pdf_bytes)
+            # Show PDF using streamlit-pdf-viewer
+            pdf_viewer(st.session_state.pdf_bytes, width=800, height=600)
         else:
             st.error("Could not load PDF. Please try opening in a new tab.")
             
