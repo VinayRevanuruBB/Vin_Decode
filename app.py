@@ -182,7 +182,7 @@ if selected_year is not None and selected_make is not None and selected_version 
             pdf_viewer(
                 st.session_state.pdf_bytes,
                 width="90%",
-                height=auto,
+                height=900,
                 pages_vertical_spacing=2
             )
         else:
