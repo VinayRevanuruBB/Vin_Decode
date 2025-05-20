@@ -16,7 +16,7 @@ st.set_page_config(
 # Function to get year range
 def get_year_range():
     current_year = datetime.now().year
-    return list(range(current_year, 1949, -1))  # From current year down to 1950
+    return list(range(current_year, 1980, -1))  # From current year down to 1950
 
 # Function to clean string for filename
 def clean_filename(text):
@@ -182,7 +182,7 @@ if selected_year is not None and selected_make is not None and selected_version 
             pdf_viewer(
                 st.session_state.pdf_bytes,
                 width="90%",
-                height=800,
+                height=auto,
                 pages_vertical_spacing=2
             )
         else:
